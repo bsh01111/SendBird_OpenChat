@@ -13,7 +13,6 @@ import com.sendbird.android.*
 import org.androidtown.sendbird_openchat.R
 import org.androidtown.sendbird_openchat.utils.DateUtils
 import org.androidtown.sendbird_openchat.utils.ImageUtils
-import org.w3c.dom.Text
 
 class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -21,9 +20,10 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
         private val VIEW_TYPE_USER_MESSAGE = 10
         private val VIEW_TYPE_FILE_MESSAGE = 20
         private val VIEW_TYPE_ADMIN_MESSAGE = 30
+        private val VIEW_TYPE_STATE_MESSAGE = 40
     }
 
-    private var mMessageList: MutableList<BaseMessage> = ArrayList<BaseMessage>()
+    private var mMessageList: MutableList<Any> = ArrayList<Any>()
     private lateinit var mItemClickListener: OnItemClickListener
     private lateinit var mItemLongClickListener: OnItemLongClickListener
 
@@ -37,6 +37,8 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
         fun onFileMessageItemClick(message: FileMessage)
 
         fun onAdminMessageItemClick(message: AdminMessage)
+
+        fun onStateMessageItemClick(message: StateMessage)
     }
 
     interface OnItemLongClickListener {
@@ -52,7 +54,12 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
     }
 
     fun setMessageList(messages: MutableList<BaseMessage>) {
-        mMessageList = messages
+        mMessageList = messages as MutableList<Any>
+        notifyDataSetChanged()
+    }
+
+    fun addFirst(message: StateMessage) {
+        mMessageList.add(0, message)
         notifyDataSetChanged()
     }
 
@@ -81,8 +88,8 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
             }
             else -> {
                 val view: View = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.list_item_open_chat_none, parent, false)
-                return NullHolder(view)
+                    .inflate(R.layout.list_item_open_chat_state, parent, false)
+                return StateMessageHolder(view)
             }
         }
     }
@@ -96,37 +103,49 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
         } else if (mMessageList[position] is FileMessage) {
             return VIEW_TYPE_FILE_MESSAGE
         }
-
-        return -1 // 다루지않은 메시지
+        return VIEW_TYPE_STATE_MESSAGE // 다루지않은 메시지
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val message: BaseMessage = mMessageList[position]
-        var isNewDay: Boolean = false
 
-        //이전 메세지를 확인
-        if (position < mMessageList.size - 1) {
-            val prevMessage: BaseMessage = mMessageList[position + 1]
 
-            //이전 메세지의 날짜가 어제라면 날짜 띄우기
-            if (!DateUtils.hasSameDate(message.createdAt, prevMessage.createdAt)) {
-                isNewDay = true
+        if (mMessageList[position] is StateMessage) {
+            val message = mMessageList[position] as StateMessage
+
+            (holder as StateMessageHolder).bind((message as StateMessage), mItemClickListener)
+        } else {
+            val message = mMessageList[position] as BaseMessage
+            var isNewDay: Boolean = false
+
+//            //이전 메세지를 확인
+//            if (position < mMessageList.size - 1) {
+//                val prevMessage: BaseMessage = mMessageList[position + 1] as BaseMessage
+//
+//                //이전 메세지의 날짜가 어제라면 날짜 띄우기
+//                if (!DateUtils.hasSameDate(message.createdAt, prevMessage.createdAt)) {
+//                    isNewDay = true
+//                }
+//            } else if (position == mMessageList.size - 1) {
+//                isNewDay = true
+//            }
+
+            when (holder.itemViewType) {
+                VIEW_TYPE_USER_MESSAGE -> {
+                    (holder as UserMessageHolder).bind(
+                        mContext, (message as UserMessage), isNewDay,
+                        mItemClickListener, mItemLongClickListener, position
+                    )
+                    Log.d("메시지 생성 확인", "${message.message}")
+                }
+                VIEW_TYPE_ADMIN_MESSAGE -> {
+                    (holder as AdminMessageHolder).bind(
+                        (message as AdminMessage), isNewDay,
+                        mItemClickListener
+                    )
+                }
             }
-        } else if (position == mMessageList.size - 1) {
-            isNewDay = true
         }
 
-        when(holder.itemViewType){
-            VIEW_TYPE_USER_MESSAGE->{
-                (holder as UserMessageHolder).bind(mContext,(message as UserMessage), isNewDay,
-                    mItemClickListener,mItemLongClickListener,position)
-                Log.d("메시지 생성 확인","${message.message}")
-            }
-            VIEW_TYPE_ADMIN_MESSAGE->{
-                (holder as AdminMessageHolder).bind((message as AdminMessage), isNewDay,
-                    mItemClickListener)
-            }
-        }
     }
 
     override fun getItemCount(): Int {
@@ -217,5 +236,16 @@ class OpenChatAdapter(var mContext: Context) : RecyclerView.Adapter<RecyclerView
 
     }
 
-    class NullHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+    class StateMessageHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        private val messageText: TextView = itemView.findViewById(R.id.text_open_chat_message)
+
+        fun bind(message: StateMessage, listener: OnItemClickListener) {
+            messageText.text = message.message
+
+            itemView.setOnClickListener {
+                listener.onStateMessageItemClick(message)
+            }
+        }
+    }
 }

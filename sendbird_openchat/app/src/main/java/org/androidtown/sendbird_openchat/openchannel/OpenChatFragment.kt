@@ -23,7 +23,7 @@ class OpenChatFragment : Fragment() {
      */
     companion object {
 
-        private val CHANNEL_LIST_LIMIT = 30
+        private val CHANNEL_LIST_LIMIT = 0
         private val CONNECTION_HANDLER_ID = "CONNECTION_HANDLER_OPEN_CHAT"
 
         fun newInstance(channelUrl: String): OpenChatFragment {
@@ -66,13 +66,13 @@ class OpenChatFragment : Fragment() {
 
                 ChatManager.ENTERCHANNELERROR->act.enterChannelFail()
 
-                ChatManager.SENDUSERMESSAGE -> act.sendUserMessageSucceed(msg.obj as UserMessage)
+                ChatManager.SENDUSERMESSAGE -> act.sendUserMessageSucceed(msg.obj as BaseMessage)
 
                 ChatManager.SENDUSERMESSAGEERROR->act.sendUserMessageFail()
 
                 ChatManager.LOADMESSAGELIST -> act.loadMessageListSucceed(msg.obj as MutableList<BaseMessage>)
 
-                ChatManager.LOADNEXTMESSAGELIST -> act.loadNextMessageListSucceed(msg.obj as MutableList<BaseMessage>)
+//                ChatManager.LOADNEXTMESSAGELIST -> act.loadNextMessageListSucceed(msg.obj as MutableList<BaseMessage>)
 
                 ChatManager.LOADMESSAGELISTERROR ->act.loadMessageListFail()
 
@@ -123,13 +123,13 @@ class OpenChatFragment : Fragment() {
 
         mChannelUrl = arguments!!.getString(OpenChannelListFragment.EXTRA_OPEN_CHANNEL_URL)
 
-
         return rootView
     }
 
     override fun onResume() {
         super.onResume()
         ChatManager.addConnectionManagementHandler(CONNECTION_HANDLER_ID,m_Handler)
+        ChatManager.addChannelHandler(CONNECTION_HANDLER_ID,m_Handler,mChannelUrl)
     }
 
     fun ResumeStart(result :Boolean){
@@ -152,11 +152,15 @@ class OpenChatFragment : Fragment() {
 
         //아이템 클릭 이벤트
         mChatAdapter.setOnItemClickListener(object : OpenChatAdapter.OnItemClickListener {
+
+
             override fun onUserMessageItemClick(message: UserMessage) {}
 
             override fun onFileMessageItemClick(message: FileMessage) {}
 
             override fun onAdminMessageItemClick(message: AdminMessage) {}
+
+            override fun onStateMessageItemClick(message: StateMessage) {}
 
         })
 
@@ -173,23 +177,23 @@ class OpenChatFragment : Fragment() {
         mRecyclerView.layoutManager = mLayoutManager
         mRecyclerView.adapter = mChatAdapter
 
-        mRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-
-                if (mLayoutManager.findLastVisibleItemPosition() == mChatAdapter.itemCount - 1) {
-                    loadNextMessageList(CHANNEL_LIST_LIMIT)
-                }
-            }
-        })
+//        mRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+//
+//                if (mLayoutManager.findLastVisibleItemPosition() == mChatAdapter.itemCount - 1) {
+//                    loadNextMessageList(CHANNEL_LIST_LIMIT)
+//                }
+//            }
+//        })
     }
 
     private fun sendUserMessage(text: String) {
        ChatManager.SendUserMessage(text,mChannel,m_Handler)
     }
 
-    private fun sendUserMessageSucceed(userMessage:UserMessage?){
-        if (userMessage != null) {
-            mChatAdapter.addFirst(userMessage)
+    private fun sendUserMessageSucceed(message:BaseMessage?){
+        if (message != null) {
+            mChatAdapter.addFirst(message)
         }
     }
 
@@ -228,7 +232,10 @@ class OpenChatFragment : Fragment() {
     }
 
     private fun loadMessageListSucceed(list:MutableList<BaseMessage>){
-        mChatAdapter.setMessageList(list)
+//        mChatAdapter.setMessageList(list)
+
+        var EnterMessage:StateMessage = StateMessage("${mChannel.name} 에 입장하셨습니다.")
+        mChatAdapter.addFirst(EnterMessage)
     }
 
     private fun loadMessageListFail(){
@@ -236,15 +243,19 @@ class OpenChatFragment : Fragment() {
         Toast.makeText(context, "LoadMessageList failed", Toast.LENGTH_SHORT).show()
     }
 
-    private fun loadNextMessageList(numMessages: Int) {
-        ChatManager.loadNextMessageList(numMessages,mPrevMessageListQuery, m_Handler)
-    }
+//    private fun loadNextMessageList(numMessages: Int) {
+//        ChatManager.loadNextMessageList(numMessages,mPrevMessageListQuery, m_Handler)
+//    }
+//
+//    private fun loadNextMessageListSucceed(list : MutableList<BaseMessage>) {
+//        if (list != null) {
+//            for (i in 0..list.size - 1) {
+//                mChatAdapter.addLast(list[i])
+//            }
+//        }
+//    }
 
-    private fun loadNextMessageListSucceed(list : MutableList<BaseMessage>) {
-        if (list != null) {
-            for (i in 0..list.size - 1) {
-                mChatAdapter.addLast(list[i])
-            }
-        }
-    }
+
+
+
 }

@@ -71,7 +71,6 @@
                 android:paddingBottom="4dp"
                 android:clipToPadding="false"
                 android:scrollbars="vertical">
-
         </android.support.v7.widget.RecyclerView>
 
         <LinearLayout
