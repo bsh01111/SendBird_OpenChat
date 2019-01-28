@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">sendbird_openchat</string>
+
+    <!-- login -->
+    <string name="login_user_id">User ID</string>
+    <string name="login_user_nickname">Nickname</string>
+    <string name="login_connect">Connect</string>
+    <string name="login_disconnect">Disconnect</string>
+
+</resources>
