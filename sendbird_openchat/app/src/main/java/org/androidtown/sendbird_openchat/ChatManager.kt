@@ -255,13 +255,18 @@ object ChatManager {
         }
     }
 
-
-    interface ConnectionManagementHandler {
-        /**
-         * A callback for when connected or reconnected to refresh.
-         *
-         * @param reconnect Set false if connected, true if reconnected.
-         */
-        fun onConnected(reconnect: Boolean)
+    fun addChannelHandler(handlerId: String, handler: Handler, ChannelUrl:String){
+        SendBird.addChannelHandler(handlerId, object : SendBird.ChannelHandler(){
+            override fun onMessageReceived(baseChannel: BaseChannel?, baseMessage: BaseMessage?) {
+                if (baseChannel?.url == ChannelUrl) {
+                    var message = handler.obtainMessage()
+                    message.what = SENDUSERMESSAGE
+                    message.obj = baseMessage
+                    handler.sendMessage(message)
+                }
+            }
+        })
     }
+
+
 }
